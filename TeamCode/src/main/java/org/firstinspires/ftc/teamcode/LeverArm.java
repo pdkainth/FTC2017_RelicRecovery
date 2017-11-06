@@ -9,6 +9,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class LeverArm {
+
+  private final static double LEVER_MOTOR_POWER = 1.0;
+
   private DcMotor leverArmDrive = null;
   private int encoderPosition[] = {0, 600, 3600, 6600, 9300};
   private int targetPositioIndex;
@@ -23,7 +26,7 @@ public class LeverArm {
     targetPosition = 0;
     targetPositioIndex = 0;
     leverArmDrive.setTargetPosition(targetPosition);
-    leverArmDrive.setPower(0.5);
+    leverArmDrive.setPower(LEVER_MOTOR_POWER);
   }
 
   public void raise(double raise, Telemetry telemetry) {
@@ -37,17 +40,18 @@ public class LeverArm {
       targetPositioIndex = position;
       targetPosition = encoderPosition[position];
       leverArmDrive.setTargetPosition(targetPosition);
-      leverArmDrive.setPower(0.5);
+      leverArmDrive.setPower(LEVER_MOTOR_POWER);
     }
 
     int encoderPosition = leverArmDrive.getCurrentPosition();
+    boolean motorBusy = leverArmDrive.isBusy();
 
-    if (encoderPosition == targetPosition) {
+    if ((Math.abs(encoderPosition - targetPosition) < 10) && (motorBusy == false)) {
       leverArmDrive.setPower(0.0);
     }
 
-    telemetry.addData("leverArm", "targetPositioIndex %d CurrentPos %d TargetPos %d",
-      targetPositioIndex, encoderPosition, targetPosition);
+    telemetry.addData("leverArm", "motorBusy %b targetPositioIndex %d CurrentPos %d TargetPos %d",
+      motorBusy, targetPositioIndex, encoderPosition, targetPosition);
   }
 
   public void stop() {
