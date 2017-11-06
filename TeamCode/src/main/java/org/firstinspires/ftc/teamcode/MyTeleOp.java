@@ -49,9 +49,29 @@ public class MyTeleOp extends OpMode {
     wheels.drive(drive, strafe, rotate, telemetry);
     telemetry.addData("gamepad1 wheels", "drive(%.2f) strafe(%.2f) rotate (%.2f)", drive, strafe, rotate);
 
-    double raise = -gamepad1.right_stick_y;
-    telemetry.addData("gamepad1 arm1", "raise (%.2f)", raise);
-    arm1.raise(raise, telemetry);
+    //double raise = -gamepad1.right_stick_y;
+    //telemetry.addData("gamepad1 arm1", "raise (%.2f)", raise);
+    //arm1.raise(raise, telemetry);
+
+    boolean position0 = gamepad1.right_bumper;
+    boolean position1 = gamepad1.y;
+    boolean position2 = gamepad1.b;
+    boolean position3 = gamepad1.a;
+    boolean position4 = gamepad1.x;
+
+    if (position0 == true) {
+      arm1.setPosition(0, telemetry);
+    } else if (position1 == true) {
+      arm1.setPosition(1, telemetry);
+    } else if (position2 == true) {
+      arm1.setPosition(2, telemetry);
+    } else if (position3 == true) {
+      arm1.setPosition(3, telemetry);
+    } else if (position4 == true) {
+      arm1.setPosition(4, telemetry);
+    } else {
+      arm1.setPosition(-1, telemetry);
+    }
 
     telemetry.addData("Status", "Run Time: " + runtime.toString());
   }
