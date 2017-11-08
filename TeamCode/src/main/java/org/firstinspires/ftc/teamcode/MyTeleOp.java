@@ -6,6 +6,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Hardware;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 /**
  * Created by pdkainth on 10/22/2017.
  */
@@ -16,6 +18,7 @@ public class MyTeleOp extends OpMode {
   private ElapsedTime runtime = new ElapsedTime();
   private Mecanum wheels = new Mecanum();
   private LeverArm arm1 = new LeverArm();
+  private GrabberArm arm2 = new GrabberArm();
 
   @Override
   public void init() {
@@ -23,6 +26,7 @@ public class MyTeleOp extends OpMode {
 
     wheels.init(hardwareMap);
     arm1.init(hardwareMap);
+    arm2.init(hardwareMap);
 
     telemetry.addData("Status", "Initialized");
   }
@@ -39,8 +43,6 @@ public class MyTeleOp extends OpMode {
 
   @Override
   public void loop() {
-    double leftPower;
-    double rightPower;
 
     double drive = -gamepad1.left_stick_y;
     double strafe = gamepad1.left_stick_x;
@@ -73,8 +75,20 @@ public class MyTeleOp extends OpMode {
       arm1.setPosition(-1, telemetry);
     }
 
+
+    //double positionLeft  = gamepad2.left_stick_x;
+    //double positionRight = gamepad2.right_stick_x;
+    //arm2.update(positionLeft, positionRight, telemetry);
+
+    if (gamepad2.right_bumper == true){
+      arm2.open(telemetry);
+    } else if (gamepad2.left_bumper == true) {
+      arm2.close(telemetry);
+    }
+
     telemetry.addData("Status", "Run Time: " + runtime.toString());
   }
+
 
   @Override
   public void stop() {
