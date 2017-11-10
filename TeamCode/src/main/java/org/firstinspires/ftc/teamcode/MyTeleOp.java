@@ -45,7 +45,14 @@ public class MyTeleOp extends OpMode {
   public void loop() {
 
     double drive = -gamepad1.left_stick_y;
-    double strafe = gamepad1.left_stick_x;
+    double strafe = 0.0;
+
+    if (gamepad1.dpad_left == true){
+      strafe = -1.0;
+    } else if (gamepad1.dpad_right == true){
+      strafe = 1.0;
+    }
+
     double rotate = gamepad1.right_stick_x;
 
     wheels.drive(drive, strafe, rotate, telemetry);

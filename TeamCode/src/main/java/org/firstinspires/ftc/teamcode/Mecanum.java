@@ -35,12 +35,14 @@ public class Mecanum {
   public void drive(double drive, double strafe, double rotate, Telemetry telemetry) {
 
     // force strafe only instead of drive and strafe
-    if (strafe != 0.0){
-      drive = 0.0;
-    }
+    //if (strafe != 0.0){
+      //drive = 0.0;
+    //}
 
+    drive = drive * 0.45;
     strafe = strafe * 0.5;
     rotate = rotate * 0.5;
+
 
     // calculate the motor power
     double frontLeftPower = drive + strafe + rotate;
