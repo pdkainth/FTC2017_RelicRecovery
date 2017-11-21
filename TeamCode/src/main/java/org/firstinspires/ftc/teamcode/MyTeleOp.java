@@ -19,6 +19,7 @@ public class MyTeleOp extends OpMode {
   private Mecanum wheels = new Mecanum();
   private LeverArm arm1 = new LeverArm();
   private GrabberArm arm2 = new GrabberArm();
+  private MyRangeSensor distance = new MyRangeSensor();
 
   @Override
   public void init() {
@@ -27,6 +28,7 @@ public class MyTeleOp extends OpMode {
     wheels.init(hardwareMap);
     arm1.init(hardwareMap);
     arm2.init(hardwareMap);
+    distance.init(hardwareMap);
 
     telemetry.addData("Status", "Initialized");
   }
@@ -44,6 +46,24 @@ public class MyTeleOp extends OpMode {
   @Override
   public void loop() {
 
+    updateDrive();
+    //testArm1();
+    updateArm1();
+    //testAtm2();
+    updateArm2();
+    updateDistance();
+
+    telemetry.addData("Status", "Run Time: " + runtime.toString());
+  }
+
+  @Override
+  public void stop() {
+    wheels.stop();
+    arm1.stop();
+
+  }
+
+  private void updateDrive() {
     double drive = -gamepad1.left_stick_y;
     double strafe = 0.0;
 
@@ -56,12 +76,16 @@ public class MyTeleOp extends OpMode {
     double rotate = gamepad1.right_stick_x;
 
     wheels.drive(drive, strafe, rotate, telemetry);
-    telemetry.addData("gamepad1 wheels", "drive(%.2f) strafe(%.2f) rotate (%.2f)", drive, strafe, rotate);
+    telemetry.addData("gamepad1 wheels", "D(%.2f) S(%.2f) R(%.2f)", drive, strafe, rotate);
+  }
 
-    //double raise = -gamepad1.right_stick_y;
-    //telemetry.addData("gamepad1 arm1", "raise (%.2f)", raise);
-    //arm1.raise(raise, telemetry);
+  private void testArm1() {
+    double raise = -gamepad1.right_stick_y;
+    telemetry.addData("gamepad1 arm1", "raise (%.2f)", raise);
+    arm1.raise(raise, telemetry);
+  }
 
+  private void updateArm1() {
     boolean position0 = gamepad1.right_bumper;
     boolean position1 = gamepad1.y;
     boolean position2 = gamepad1.b;
@@ -81,25 +105,24 @@ public class MyTeleOp extends OpMode {
     } else {
       arm1.setPosition(-1, telemetry);
     }
+  }
 
+  private void testArm2() {
+    double positionLeft  = gamepad2.left_stick_x;
+    double positionRight = gamepad2.right_stick_x;
+    arm2.update(positionLeft, positionRight, telemetry);
+  }
 
-    //double positionLeft  = gamepad2.left_stick_x;
-    //double positionRight = gamepad2.right_stick_x;
-    //arm2.update(positionLeft, positionRight, telemetry);
-
+  private void updateArm2() {
     if (gamepad2.right_bumper == true){
       arm2.open(telemetry);
     } else if (gamepad2.left_bumper == true) {
       arm2.close(telemetry);
     }
-
-    telemetry.addData("Status", "Run Time: " + runtime.toString());
   }
 
-
-  @Override
-  public void stop() {
-    wheels.stop();
-    arm1.stop();
+  private void updateDistance() {
+    distance.getDistance(telemetry);
   }
+
 }
