@@ -16,11 +16,12 @@ public class MyRangeSensor {
     sensorDistance = hardwaremap.get(ModernRoboticsI2cRangeSensor.class, "RangeSensor");
   }
 
-  public void getDistance(Telemetry telemetry){
+  public double getDistance(Telemetry telemetry){
 
     double distance = sensorDistance.getDistance(DistanceUnit.CM);
 
     telemetry.addData("distanceSensor", "range %,2f cm", distance);
+    return distance;
   }
 
   public void stop() {

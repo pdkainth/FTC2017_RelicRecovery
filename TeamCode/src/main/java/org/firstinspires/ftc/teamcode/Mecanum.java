@@ -14,6 +14,9 @@ public class Mecanum {
   private DcMotor frontRightDrive = null;
   private DcMotor backLeftDrive = null;
   private DcMotor backRightDrive = null;
+  private final static double MAX_HAZARD_DISTANCE = 60.0;
+  private final static double MIN_HAZARD_DISTANCE = 35.0;
+
 
   public void init(HardwareMap hardwareMap) {
     frontLeftDrive = hardwareMap.get(DcMotor.class, "Motor4");
@@ -32,14 +35,19 @@ public class Mecanum {
     backRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
   }
 
-  public void drive(double drive, double strafe, double rotate, Telemetry telemetry) {
+  public void drive(double drive, double strafe, double rotate, Telemetry telemetry, MyRangeSensor distanceRange) {
 
-    // force strafe only instead of drive and strafe
-    //if (strafe != 0.0){
-      //drive = 0.0;
-    //}
+    double newDrive;
+    double curDistance = distanceRange.getDistance(telemetry);
 
-    drive = drive * 0.45;
+    if ((curDistance < MAX_HAZARD_DISTANCE) && (drive > 0.0) ){
+      newDrive = (curDistance - MIN_HAZARD_DISTANCE)/(MAX_HAZARD_DISTANCE - MIN_HAZARD_DISTANCE);
+      drive = Math.min(drive, newDrive);
+      drive = Math.max(0, drive);
+    }
+
+
+    drive = drive * 0.6;
     strafe = strafe * 0.5;
     rotate = rotate * 0.5;
 

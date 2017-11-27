@@ -23,7 +23,7 @@ public class MyTeleOp extends OpMode {
   private Mecanum wheels = new Mecanum();
   private LeverArm arm1 = new LeverArm();
   private GrabberArm arm2 = new GrabberArm();
-  private MyRangeSensor distance = new MyRangeSensor();
+  private MyRangeSensor distanceRange = new MyRangeSensor();
 
   @Override
   public void init() {
@@ -32,7 +32,7 @@ public class MyTeleOp extends OpMode {
     wheels.init(hardwareMap);
     arm1.init(hardwareMap);
     arm2.init(hardwareMap);
-    distance.init(hardwareMap);
+    distanceRange.init(hardwareMap);
 
     telemetry.addData("Status", "Initialized");
   }
@@ -55,7 +55,7 @@ public class MyTeleOp extends OpMode {
     updateArm1();
     //testAtm2();
     updateArm2();
-    updateDistance();
+    updatedistanceRange();
 
     telemetry.addData("Status", "Run Time: " + runtime.toString());
   }
@@ -79,7 +79,7 @@ public class MyTeleOp extends OpMode {
 
     double rotate = gamepad1.right_stick_x;
 
-    wheels.drive(drive, strafe, rotate, telemetry);
+    wheels.drive(drive, strafe, rotate, telemetry, distanceRange);
     telemetry.addData("gamepad1 wheels", "D(%.2f) S(%.2f) R(%.2f)", drive, strafe, rotate);
   }
 
@@ -129,8 +129,8 @@ public class MyTeleOp extends OpMode {
     arm2.update(buttonCond, telemetry);
   }
 
-  private void updateDistance() {
-    distance.getDistance(telemetry);
+  private void updatedistanceRange() {
+    distanceRange.getDistance(telemetry);
   }
 
 
