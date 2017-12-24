@@ -14,11 +14,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @TeleOp(name = "Manual Control")
 public class MyTeleOp extends OpMode {
-
-  public enum ButtonState {
-    PRESSED, RELEASED
-  }
-
   private ElapsedTime runtime = new ElapsedTime();
   private Mecanum wheels = new Mecanum();
   private LeverArm arm1 = new LeverArm();
@@ -132,12 +127,12 @@ public class MyTeleOp extends OpMode {
   }
 
   private void updateArm2() {
-    ButtonState buttonCond;
+    GrabberArm.ButtonState buttonCond;
 
     if (gamepad1.left_bumper == true) {
-      buttonCond = ButtonState.PRESSED;
+      buttonCond = GrabberArm.ButtonState.PRESSED;
     } else {
-      buttonCond = ButtonState.RELEASED;
+      buttonCond = GrabberArm.ButtonState.RELEASED;
     }
 
     arm2.update(buttonCond, telemetry);
