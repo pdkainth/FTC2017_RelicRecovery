@@ -51,10 +51,8 @@ public class MyTeleOp extends OpMode {
   public void loop() {
 
     updateDrive();
-    //testArm1();
-    updateArm1();
-    //testAtm2();
-    updateArm2();
+    updateArm1(); // lever ARM
+    updateArm2(); // Grabber Arm
     updatedistanceRange();
 
     telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -84,12 +82,6 @@ public class MyTeleOp extends OpMode {
     telemetry.addData("gamepad1 wheels", "D(%.2f) S(%.2f) R(%.2f)", drive, strafe, rotate);
   }
 
-  private void testArm1() {
-    double raise = -gamepad1.right_stick_y;
-    telemetry.addData("gamepad1 arm1", "raise (%.2f)", raise);
-    arm1.raise(raise, telemetry);
-  }
-
   private void updateArm1() {
     boolean position0 = gamepad1.right_bumper;
     boolean position1 = gamepad1.y;
@@ -97,18 +89,23 @@ public class MyTeleOp extends OpMode {
     boolean position3 = gamepad1.a;
     boolean position4 = gamepad1.x;
 
-    if (position0 == true) {
-      arm1.setPosition(0, telemetry);
-    } else if (position1 == true) {
-      arm1.setPosition(1, telemetry);
-    } else if (position2 == true) {
-      arm1.setPosition(2, telemetry);
-    } else if (position3 == true) {
-      arm1.setPosition(3, telemetry);
-    } else if (position4 == true) {
-      arm1.setPosition(4, telemetry);
+
+    if (gamepad1.start) {
+      arm1.resetEncoder();
     } else {
-      arm1.setPosition(-1, telemetry);
+      if (position0 == true) {
+        arm1.setPosition(0, telemetry);
+      } else if (position1 == true) {
+        arm1.setPosition(1, telemetry);
+      } else if (position2 == true) {
+        arm1.setPosition(2, telemetry);
+      } else if (position3 == true) {
+        arm1.setPosition(3, telemetry);
+      } else if (position4 == true) {
+        arm1.setPosition(4, telemetry);
+      } else {
+        arm1.setPosition(-1, telemetry);
+      }
     }
   }
 

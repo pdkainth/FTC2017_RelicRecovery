@@ -10,23 +10,28 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class LeverArm {
 
-  private final static double LEVER_MOTOR_POWER = 1.0;
+  private final static double LEVER_MOTOR_POWER = 0.75;
+  private final static int encoderPosition[] = {0, 600, 3600, 6600, 9300};
 
   private DcMotor leverArmDrive = null;
-  private int encoderPosition[] = {0, 600, 3600, 6600, 9300};
+
   private int targetPositioIndex;
   private int targetPosition;
 
   public void init(HardwareMap hardwaremap) {
     leverArmDrive = hardwaremap.get(DcMotor.class, "Motor5");
     leverArmDrive.setPower(0.0);
-    leverArmDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     leverArmDrive.setDirection(DcMotorSimple.Direction.FORWARD);
-    leverArmDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+    resetEncoder();
+  }
+
+  public void resetEncoder() {
+    leverArmDrive.setPower(0.0);
+    leverArmDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     targetPosition = 0;
     targetPositioIndex = 0;
     leverArmDrive.setTargetPosition(targetPosition);
-    leverArmDrive.setPower(LEVER_MOTOR_POWER);
   }
 
   public void raise(double raise, Telemetry telemetry) {
