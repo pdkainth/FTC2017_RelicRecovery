@@ -97,11 +97,12 @@ public class MyTeleOp extends OpMode {
     if (gamepad1.dpad_down) {
       raise = -1.0;
     }
+    boolean override = (gamepad1.right_trigger > 0.7);
 
     if (gamepad1.start) {
       arm1.resetEncoder();
     } else if (raise != 0) {
-      arm1.raise(raise, telemetry);
+      arm1.raise(raise, override, telemetry);
     } else {
       if (arm1.getOpState() == LeverArm.MotorOpMode.MANUAL) {
         arm1.stop();
