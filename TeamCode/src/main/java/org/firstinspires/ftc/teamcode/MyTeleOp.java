@@ -79,7 +79,8 @@ public class MyTeleOp extends OpMode {
 
     double rotate = gamepad1.right_stick_x;
 
-    wheels.drive(drive, strafe, rotate, telemetry, distanceRange);
+    boolean override = (gamepad1.left_trigger > 0.7);
+    wheels.drive(drive, strafe, rotate, telemetry, distanceRange,override);
     telemetry.addData("gamepad1 wheels", "D(%.2f) S(%.2f) R(%.2f)", drive, strafe, rotate);
   }
 

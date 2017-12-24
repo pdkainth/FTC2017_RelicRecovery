@@ -35,17 +35,19 @@ public class Mecanum {
     backRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
   }
 
-  public void drive(double drive, double strafe, double rotate, Telemetry telemetry, MyRangeSensor distanceRange) {
+  public void drive(double drive, double strafe, double rotate, Telemetry telemetry,
+                    MyRangeSensor distanceRange, boolean override) {
 
-    double newDrive;
-    double curDistance = distanceRange.getDistance(telemetry);
+    if (override == false) {
+      double newDrive;
+      double curDistance = distanceRange.getDistance(telemetry);
 
-    if ((curDistance < MAX_HAZARD_DISTANCE) && (drive > 0.0) ){
-      newDrive = (curDistance - MIN_HAZARD_DISTANCE)/(MAX_HAZARD_DISTANCE - MIN_HAZARD_DISTANCE);
-      drive = Math.min(drive, newDrive);
-      drive = Math.max(0, drive);
+      if ((curDistance < MAX_HAZARD_DISTANCE) && (drive > 0.0)) {
+        newDrive = (curDistance - MIN_HAZARD_DISTANCE) / (MAX_HAZARD_DISTANCE - MIN_HAZARD_DISTANCE);
+        drive = Math.min(drive, newDrive);
+        drive = Math.max(0, drive);
+      }
     }
-
 
     drive = drive * 0.6;
     strafe = strafe * 0.5;
@@ -86,7 +88,7 @@ public class Mecanum {
     backLeftDrive.setPower(backLeftPower);
     backRightDrive.setPower(backRightPower);
 
-    telemetry.addData("mecanum", "power frontLeft %.2f frontRight %.2f backLeft %.2f backRight %.2f",
+    telemetry.addData("mecanum", "power FL %.2f FR %.2f BL %.2f BR %.2f",
       frontLeftPower, frontRightPower, backLeftPower, backRightPower);
   }
 
