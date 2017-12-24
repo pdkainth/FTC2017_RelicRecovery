@@ -82,6 +82,7 @@ public class LeverArm {
       targetPosition = encoderPosition[targetPositionIndex];
     }
 
+    stringIsLoose = stringLooseSensor.getData() >= stringLooseDetectNorm;
     goingDown = curEncoderPosition > targetPosition;
 
     if(goingDown && stringIsLoose){
