@@ -19,6 +19,7 @@ public class MyTeleOp extends OpMode {
   private LeverArm arm1 = new LeverArm();
   private GrabberArm arm2 = new GrabberArm();
   private MyRangeSensor distanceRange = new MyRangeSensor();
+  private JewelArm jewelArm = new JewelArm();
 
   @Override
   public void init() {
@@ -28,6 +29,7 @@ public class MyTeleOp extends OpMode {
     arm1.init(hardwareMap);
     arm2.init(hardwareMap);
     distanceRange.init(hardwareMap);
+    jewelArm.init(hardwareMap);
 
     telemetry.addData("Status", "Initialized");
   }
@@ -58,6 +60,7 @@ public class MyTeleOp extends OpMode {
     wheels.stop();
     arm1.stop();
     arm2.stop();
+    jewelArm.stop();
   }
 
   private void updateDrive() {
