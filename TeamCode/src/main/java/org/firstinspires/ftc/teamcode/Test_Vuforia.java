@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 
 @TeleOp(name = "Test VuMark", group = "TEST_OP_MODE")
@@ -22,6 +23,7 @@ public class Test_Vuforia extends OpMode {
   private VuMark_Nav vumark = new VuMark_Nav();
   private JewelArm jewelArm = new JewelArm();
   private MyColorSensor colorSensor = new MyColorSensor();
+  private GrabberArm grabberArm = new GrabberArm();
 
   private boolean gotVuMark = false;
   private boolean gotToTarget = false;
@@ -40,6 +42,7 @@ public class Test_Vuforia extends OpMode {
     vumark.init(hardwareMap);
     jewelArm.init(hardwareMap);
     colorSensor.init(hardwareMap, "ColorSensor1");
+    grabberArm.init(hardwareMap);
 
     gotVuMark = false;
     gotToTarget = false;
@@ -78,23 +81,29 @@ public class Test_Vuforia extends OpMode {
     } else {
       if (gotToTarget == false) {
         VectorF trans = vumark.getVumarkTrans();
-        double z_error = -449 - trans.get(2);
-        double x_error = trans.get(0) - 130;
+        Orientation orientation = vumark.getVumarkOrient();
+        double zError = -449 - trans.get(2);
+        double xError = trans.get(0) - 160;
+        double yRotError = 0 - orientation.secondAngle;
 
-        if ((Math.abs(z_error) < 5) && (Math.abs(x_error) < 5)) {
+        if ((Math.abs(zError) < 5) && (Math.abs(xError) < 5) && (yRotError < 1)) {
           gotToTarget = true;
           jewelArm.down();
         } else {
           double drivePower = 0.0;
           double strafePower = 0.0;
-          if (Math.abs(z_error) >= 5) {
-            drivePower = 0.5 * Math.signum(x_error);
+          double rotPower = 0.0;
+          if (Math.abs(xError) >= 5) {
+            drivePower = xError / 100.0;
           }
-          if (Math.abs(x_error) >= 5) {
-            strafePower = 0.5 * Math.signum(z_error);
+          if (Math.abs(zError) >= 5) {
+            strafePower = zError / 100.0;
           }
-
-          wheels.drive(drivePower, strafePower, 0, telemetry, distanceRange, true);
+          if (Math.abs(yRotError) >= 1) {
+            rotPower = yRotError / 30.0;
+          }
+          wheels.setScaling(false);
+          wheels.drive(drivePower, strafePower, rotPower, telemetry, distanceRange, true);
           wheels.stop();
         }
       } else {
@@ -111,6 +120,7 @@ public class Test_Vuforia extends OpMode {
               rotPowerDir = -1.0;
             }
             jewelKnockState = JewelKnockState.START_FORWARD;
+            wheels.setScaling(true);
           }
         } else {
           if (jewelKnockState == JewelKnockState.START_FORWARD) {
