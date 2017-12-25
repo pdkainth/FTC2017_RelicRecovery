@@ -2,19 +2,19 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Hardware;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 
 public class MyAutoDrive {
   private ElapsedTime runtime = new ElapsedTime();
   public enum FieldMode {STRAIGHT, SQUARE}
   public enum GlyphColor {GRAY, BROWN}
-  public enum AllianceColor {RED, BLUE}
+  public enum AllianceColor {UNKNOWN, RED, BLUE}
 
   private boolean running = false;
 
@@ -27,6 +27,197 @@ public class MyAutoDrive {
   private LeverArm arm1 = new LeverArm();
   private GrabberArm arm2 = new GrabberArm();
   private MyRangeSensor distanceRange = new MyRangeSensor();
+  private VuMark_Nav vumark = new VuMark_Nav();
+  private JewelArm jewelArm = new JewelArm();
+  private MyColorSensor colorSensor = new MyColorSensor();
+  private MyGyro gyro = new MyGyro();
+
+  public enum AutoState {
+    IDLE {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        return IDLE;
+      }
+    },
+    START {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        return GET_VUMARK;
+      }
+    },
+    GET_VUMARK {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.vumark.scan(telemetry);
+        RelicRecoveryVuMark curVumark = autoDrive.vumark.getCurVumark();
+        OpenGLMatrix curPose = autoDrive.vumark.getCurPose();
+        if ((curVumark == RelicRecoveryVuMark.UNKNOWN) || (curPose == null)) {
+          autoDrive.wheels.drive(0.5, 0, 0, telemetry, autoDrive.distanceRange, true);
+          autoDrive.wheels.stop();
+          return GET_VUMARK;
+        }
+        else {
+          if (curVumark == RelicRecoveryVuMark.LEFT) {
+            autoDrive.selectGlyphColumn = 0;
+          } else if (curVumark == RelicRecoveryVuMark.CENTER) {
+            autoDrive.selectGlyphColumn = 1;
+          } else if (curVumark == RelicRecoveryVuMark.RIGHT) {
+            autoDrive.selectGlyphColumn = 2;
+          }
+          return GOTO_JEWEL_TARGET;
+        }
+      }
+    },
+    GOTO_JEWEL_TARGET {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.vumark.scan(telemetry);
+        VectorF trans = autoDrive.vumark.getVumarkTrans();
+        Orientation orientation = autoDrive.vumark.getVumarkOrient();
+        double zError = -449 - trans.get(2);
+        double xError = trans.get(0) - 160;
+        double yRotError = 0 - orientation.secondAngle;
+
+        boolean reachedAtTarget = (Math.abs(zError) < 5) && (Math.abs(xError) < 5) && (yRotError < 1);
+
+        if (reachedAtTarget == false) {
+          double drivePower = 0.0;
+          double strafePower = 0.0;
+          double rotPower = 0.0;
+          if (Math.abs(xError) >= 5) {
+            drivePower = xError / 100.0;
+          }
+          if (Math.abs(zError) >= 5) {
+            strafePower = zError / 100.0;
+          }
+          if (Math.abs(yRotError) >= 1) {
+            rotPower = yRotError / 30.0;
+          }
+          autoDrive.wheels.setScaling(false);
+          autoDrive.wheels.drive(drivePower, strafePower, rotPower, telemetry, autoDrive.distanceRange, true);
+          autoDrive.wheels.stop();
+          return GOTO_JEWEL_TARGET;
+        } else {
+          autoDrive.gyro.resetZaxis();
+          autoDrive.jewelKnockOutState = JewelKnockOutState.START;
+          return KNOCK_OUT_JEWEL;
+        }
+      }
+    },
+    KNOCK_OUT_JEWEL {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.jewelKnockOutState = autoDrive.jewelKnockOutState.update(autoDrive, telemetry);
+        if (autoDrive.jewelKnockOutState != JewelKnockOutState.IDLE) {
+          return KNOCK_OUT_JEWEL;
+        } else {
+          return IDLE;
+        }
+      }
+    };
+
+    public abstract AutoState update(MyAutoDrive autoDrive, Telemetry telemetry);
+  } // end of AutoState enum
+
+  public enum JewelKnockOutState {
+    IDLE {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        return IDLE;
+      }
+    },
+    START {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.jewelColor = AllianceColor.UNKNOWN;
+        return JEWEL_ARM_DOWN;
+      }
+    },
+    JEWEL_ARM_DOWN {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.jewelArm.down();
+        return GET_COLOR_NUMBER;
+      }
+    },
+    GET_COLOR_NUMBER {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        int colorIdx = autoDrive.colorSensor.getColor(telemetry);
+        if (colorIdx == 0) {
+          autoDrive.wheels.drive(0.5, 0, 0, telemetry, autoDrive.distanceRange, true);
+          autoDrive.wheels.stop();
+          return GET_COLOR_NUMBER;
+        } else {
+          if ((colorIdx >= 2) && (colorIdx <= 4)) {
+            autoDrive.jewelColor = AllianceColor.BLUE;
+          } else if ((colorIdx >= 9) && (colorIdx <= 11)) {
+            autoDrive.jewelColor = AllianceColor.RED;
+          }
+
+          if (autoDrive.jewelColor == AllianceColor.UNKNOWN) {
+            return GET_COLOR_NUMBER;
+          } else {
+            return ROTATE_FORWARD;
+          }
+        }
+      }
+    },
+    ROTATE_FORWARD {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        double rotPowerDir;
+        if (autoDrive.jewelColor == autoDrive.allianceColor) {
+          rotPowerDir = 1.0;
+        } else {
+          rotPowerDir = -1.0;
+        }
+        autoDrive.wheels.setScaling(true);
+        autoDrive.wheels.drive(0, 0, 0.5 * rotPowerDir, telemetry, autoDrive.distanceRange, true);
+        autoDrive.jewelRotStartTime = autoDrive.runtime.milliseconds();
+        return WAIT_ROTATE_FORWARD;
+      }
+    },
+    WAIT_ROTATE_FORWARD {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        double curTime = autoDrive.runtime.milliseconds();
+        if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
+          return WAIT_ROTATE_FORWARD;
+        } else {
+          autoDrive.wheels.stop();
+          return JEWEL_ARM_UP;
+        }
+      }
+    },
+    JEWEL_ARM_UP {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.jewelArm.up();
+        return ROTATE_BACKWARD;
+      }
+    },
+    ROTATE_BACKWARD {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        double rotPowerDir;
+        if (autoDrive.jewelColor == autoDrive.allianceColor) {
+          rotPowerDir = -1.0;
+        } else {
+          rotPowerDir = 1.0;
+        }
+        autoDrive.wheels.setScaling(true);
+        autoDrive.wheels.drive(0, 0, 0.5 * rotPowerDir, telemetry, autoDrive.distanceRange, true);
+        autoDrive.jewelRotStartTime = autoDrive.runtime.milliseconds();
+        return WAIT_ROTATE_BACKWARD;
+      }
+    },
+    WAIT_ROTATE_BACKWARD {
+      public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        double curTime = autoDrive.runtime.milliseconds();
+        if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
+          return WAIT_ROTATE_BACKWARD;
+        } else {
+          autoDrive.wheels.stop();
+          return IDLE;
+        }
+      }
+    };
+
+    public abstract JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry);
+  } // end of JewelKnockOutState enum
+
+  private AutoState autoState;
+  private JewelKnockOutState jewelKnockOutState;
+  private AllianceColor jewelColor;
+  double jewelRotStartTime;
 
   public void init(HardwareMap hardwareMap, Telemetry telemetry, FieldMode fieldMode,
                    AllianceColor allianceColor, GlyphColor glyphColor) {
@@ -36,11 +227,19 @@ public class MyAutoDrive {
     this.glyphColor = glyphColor;
     this.allianceColor = allianceColor;
 
-
     wheels.init(hardwareMap);
     arm1.init(hardwareMap);
     arm2.init(hardwareMap);
     distanceRange.init(hardwareMap);
+    jewelArm.init(hardwareMap);
+    colorSensor.init(hardwareMap, "ColorSensor1");
+    gyro.init(hardwareMap);
+    vumark.init(hardwareMap);
+
+    autoState = AutoState.IDLE;
+    jewelKnockOutState = JewelKnockOutState.IDLE;
+    jewelColor = AllianceColor.UNKNOWN;
+    jewelRotStartTime = 0.0;
 
     telemetry.addData("AutoStatus", "Initialized F %s G %s A %s",
       this.fieldMode, this.glyphColor, this.allianceColor);
@@ -56,6 +255,8 @@ public class MyAutoDrive {
   public void start(Telemetry telemetry) {
     runtime.reset();
     running = true;
+    autoState = AutoState.START;
+    vumark.start();
     telemetry.addData("AutoStatus", "Started F %s G %s A %s",
       fieldMode, glyphColor, allianceColor);
  }
@@ -63,15 +264,19 @@ public class MyAutoDrive {
   public void loop(Telemetry telemetry) {
     if((runtime.seconds() > 30.0) && running){
       stop();
+    } else {
+      autoState = autoState.update(this, telemetry);
     }
-    telemetry.addData("AutoStatus", "Loop Run Time: %s F %s G %s A %s",
-      runtime.toString(), fieldMode, glyphColor, allianceColor);
+    telemetry.addData("AutoStatus", "runtime: %s F %s G %s A %s states auto %s jewel %s",
+      runtime.toString(), fieldMode, glyphColor, allianceColor, autoState, jewelKnockOutState);
   }
 
   public void stop() {
     wheels.stop();
     arm1.stop();
     arm2.stop();
+    jewelArm.stop();
+    colorSensor.stop();
     running = false;
   }
 
