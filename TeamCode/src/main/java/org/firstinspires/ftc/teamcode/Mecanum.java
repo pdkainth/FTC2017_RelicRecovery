@@ -16,7 +16,7 @@ public class Mecanum {
   private DcMotor backRightDrive = null;
   private final static double MAX_HAZARD_DISTANCE = 60.0;
   private final static double MIN_HAZARD_DISTANCE = 35.0;
-
+  boolean scalingOn = true;
 
   public void init(HardwareMap hardwareMap) {
     frontLeftDrive = hardwareMap.get(DcMotor.class, "Motor4");
@@ -33,6 +33,12 @@ public class Mecanum {
     frontRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
     backLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
     backRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+
+    scalingOn = true;
+  }
+
+  public void setScaling(boolean flag) {
+    scalingOn = flag;
   }
 
   public void drive(double drive, double strafe, double rotate, Telemetry telemetry,
@@ -49,10 +55,11 @@ public class Mecanum {
       }
     }
 
-    drive = drive * 0.6;
-    strafe = strafe * 0.5;
-    rotate = rotate * 0.5;
-
+    if (scalingOn) {
+      drive = drive * 0.6;
+      strafe = strafe * 0.5;
+      rotate = rotate * 0.5;
+    }
 
     // calculate the motor power
     double frontLeftPower = drive + strafe + rotate;
