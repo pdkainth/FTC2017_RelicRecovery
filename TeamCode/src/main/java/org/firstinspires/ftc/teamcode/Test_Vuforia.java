@@ -23,6 +23,7 @@ public class Test_Vuforia extends OpMode {
   private VuMark_Nav vumark = new VuMark_Nav();
   private JewelArm jewelArm = new JewelArm();
   private MyColorSensor colorSensor = new MyColorSensor();
+  private MyGyro gyro = new MyGyro();
   private GrabberArm grabberArm = new GrabberArm();
 
   private boolean gotVuMark = false;
@@ -42,6 +43,7 @@ public class Test_Vuforia extends OpMode {
     vumark.init(hardwareMap);
     jewelArm.init(hardwareMap);
     colorSensor.init(hardwareMap, "ColorSensor1");
+    gyro.init(hardwareMap);
     grabberArm.init(hardwareMap);
 
     gotVuMark = false;
@@ -55,7 +57,7 @@ public class Test_Vuforia extends OpMode {
 
   @Override
   public void init_loop() {
-
+    gyro.init_loop(telemetry);
   }
 
   @Override
@@ -88,6 +90,7 @@ public class Test_Vuforia extends OpMode {
 
         if ((Math.abs(zError) < 5) && (Math.abs(xError) < 5) && (yRotError < 1)) {
           gotToTarget = true;
+          gyro.resetZaxis();
           jewelArm.down();
         } else {
           double drivePower = 0.0;
