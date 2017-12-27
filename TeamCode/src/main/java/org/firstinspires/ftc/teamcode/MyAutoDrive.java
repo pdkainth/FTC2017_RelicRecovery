@@ -13,13 +13,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 public class MyAutoDrive {
   private ElapsedTime runtime = new ElapsedTime();
   public enum FieldMode {STRAIGHT, SQUARE}
-  public enum GlyphColor {GRAY, BROWN}
   public enum AllianceColor {UNKNOWN, RED, BLUE}
 
   private boolean running = false;
 
   private FieldMode fieldMode;
-  private GlyphColor glyphColor;
   private AllianceColor allianceColor;
   private int selectGlyphColumn = 0;
 
@@ -220,11 +218,10 @@ public class MyAutoDrive {
   double jewelRotStartTime;
 
   public void init(HardwareMap hardwareMap, Telemetry telemetry, FieldMode fieldMode,
-                   AllianceColor allianceColor, GlyphColor glyphColor) {
+                   AllianceColor allianceColor) {
     telemetry.addData("AutoStatus", "Initializing");
 
     this.fieldMode = fieldMode;
-    this.glyphColor = glyphColor;
     this.allianceColor = allianceColor;
 
     wheels.init(hardwareMap);
@@ -241,8 +238,8 @@ public class MyAutoDrive {
     jewelColor = AllianceColor.UNKNOWN;
     jewelRotStartTime = 0.0;
 
-    telemetry.addData("AutoStatus", "Initialized F %s G %s A %s",
-      this.fieldMode, this.glyphColor, this.allianceColor);
+    telemetry.addData("AutoStatus", "Initialized F %s A %s",
+      this.fieldMode, this.allianceColor);
   }
 
   public void init_loop(Telemetry telemetry, Gamepad gamepad1) {
@@ -257,8 +254,8 @@ public class MyAutoDrive {
     running = true;
     autoState = AutoState.START;
     vumark.start();
-    telemetry.addData("AutoStatus", "Started F %s G %s A %s",
-      fieldMode, glyphColor, allianceColor);
+    telemetry.addData("AutoStatus", "Started F %s A %s",
+      fieldMode, allianceColor);
  }
 
   public void loop(Telemetry telemetry) {
@@ -267,8 +264,8 @@ public class MyAutoDrive {
     } else {
       autoState = autoState.update(this, telemetry);
     }
-    telemetry.addData("AutoStatus", "runtime: %s F %s G %s A %s states auto %s jewel %s",
-      runtime.toString(), fieldMode, glyphColor, allianceColor, autoState, jewelKnockOutState);
+    telemetry.addData("AutoStatus", "runtime: %s F %s A %s states auto %s jewel %s",
+      runtime.toString(), fieldMode, allianceColor, autoState, jewelKnockOutState);
   }
 
   public void stop() {
