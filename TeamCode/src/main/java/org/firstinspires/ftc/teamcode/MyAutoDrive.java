@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
@@ -59,6 +60,9 @@ public class MyAutoDrive {
           } else if (curVumark == RelicRecoveryVuMark.RIGHT) {
             autoDrive.selectGlyphColumn = 2;
           }
+          Orientation orientation = autoDrive.vumark.getVumarkOrient();
+          double yRotError = 0 - orientation.secondAngle;
+          autoDrive.gyro.setZaxisOffset((int)Math.round(yRotError));
           return GOTO_JEWEL_TARGET;
         }
       }
@@ -106,6 +110,11 @@ public class MyAutoDrive {
         } else {
           return IDLE;
         }
+      }
+    },
+    GET_VUMARK_FOR_GLYPH_DRIVE {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        return IDLE;
       }
     };
 
@@ -168,8 +177,10 @@ public class MyAutoDrive {
     },
     WAIT_ROTATE_FORWARD {
       public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
-        double curTime = autoDrive.runtime.milliseconds();
-        if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
+        //double curTime = autoDrive.runtime.milliseconds();
+        int rotError = autoDrive.gyro.getZaxis(telemetry);
+        //if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
+        if (Math.abs(rotError) < 10) {
           return WAIT_ROTATE_FORWARD;
         } else {
           autoDrive.wheels.stop();
@@ -185,22 +196,31 @@ public class MyAutoDrive {
     },
     ROTATE_BACKWARD {
       public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
-        double rotPowerDir;
-        if (autoDrive.jewelColor == autoDrive.allianceColor) {
-          rotPowerDir = -1.0;
-        } else {
-          rotPowerDir = 1.0;
-        }
-        autoDrive.wheels.setScaling(true);
-        autoDrive.wheels.drive(0, 0, 0.5 * rotPowerDir, telemetry, autoDrive.distanceRange, true);
+        //double rotPowerDir;
+        //if (autoDrive.jewelColor == autoDrive.allianceColor) {
+        //  rotPowerDir = -1.0;
+        //} else {
+        //  rotPowerDir = 1.0;
+        //}
+        int rotError = autoDrive.gyro.getZaxis(telemetry);
+        double rotPower = Range.scale((double)rotError, -180.0, 179.0, -1.0, 1.0);
+        rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 1) * Math.signum(rotPower);
+        autoDrive.wheels.setScaling(false);
+        autoDrive.wheels.drive(0, 0, rotPower, telemetry, autoDrive.distanceRange, true);
         autoDrive.jewelRotStartTime = autoDrive.runtime.milliseconds();
         return WAIT_ROTATE_BACKWARD;
       }
     },
     WAIT_ROTATE_BACKWARD {
       public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
-        double curTime = autoDrive.runtime.milliseconds();
-        if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
+        //double curTime = autoDrive.runtime.milliseconds();
+        int rotError = autoDrive.gyro.getZaxis(telemetry);
+        double rotPower = 0.0;
+        //if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
+        if (Math.abs(rotError) > 1) {
+          rotPower = Range.scale((double)rotError, -180.0, 179.0, -1.0, 1.0);
+          rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 1) * Math.signum(rotPower);
+          autoDrive.wheels.drive(0, 0, rotPower, telemetry, autoDrive.distanceRange, true);
           return WAIT_ROTATE_BACKWARD;
         } else {
           autoDrive.wheels.stop();
