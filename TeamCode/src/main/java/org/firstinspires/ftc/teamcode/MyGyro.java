@@ -10,11 +10,12 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class MyGyro {
   ModernRoboticsI2cGyro mrGyro;
   boolean calibrationInProgress = false;
+  int offsetZaxis = 0;
 
   public void init(HardwareMap hardwaremap) {
 
     boolean lastResetState = false;
-    boolean curResetState  = false;
+    boolean curResetState = false;
 
     // Get a reference to a Modern Robotics gyro object.
     mrGyro = hardwaremap.get(ModernRoboticsI2cGyro.class, "GyroSensor");
@@ -45,18 +46,30 @@ public class MyGyro {
     calibrationInProgress = true;
   }
 
-  public boolean isCalibrated() { return (calibrationInProgress == false); }
+  public boolean isCalibrated() {
+    return (calibrationInProgress == false);
+  }
 
   public void resetZaxis() {
     mrGyro.resetZAxisIntegrator();
   }
 
+  public void setZaxisOffset(int offset) {
+    // this is CCW offset of real 0 location from gyro 0 location
+    offsetZaxis = offset;
+  }
+
   public int getZaxis(Telemetry telemetry) {
     int integratedZ = mrGyro.getIntegratedZValue();
+    integratedZ -= offsetZaxis;
     int integratedZMod360 = integratedZ % 360;
     int integratedZMod180 = integratedZMod360;
-    if (integratedZMod180 >= 180) { integratedZMod180 -= 360; }
-    if (integratedZMod180 < -180) { integratedZMod180 += 360; }
+    if (integratedZMod180 >= 180) {
+      integratedZMod180 -= 360;
+    }
+    if (integratedZMod180 < -180) {
+      integratedZMod180 += 360;
+    }
 
     telemetry.addData("gyro", "zAxis, int %d mod360 %d mod180 %d ", integratedZ, integratedZMod360, integratedZMod180);
     return integratedZMod180;
