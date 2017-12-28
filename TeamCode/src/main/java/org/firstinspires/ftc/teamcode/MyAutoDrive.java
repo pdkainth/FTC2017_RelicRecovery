@@ -60,9 +60,6 @@ public class MyAutoDrive {
           } else if (curVumark == RelicRecoveryVuMark.RIGHT) {
             autoDrive.selectGlyphColumn = 2;
           }
-          Orientation orientation = autoDrive.vumark.getVumarkOrient();
-          double yRotError = 0 - orientation.secondAngle;
-          autoDrive.gyro.setZaxisOffset((int)Math.round(yRotError));
           return GOTO_JEWEL_TARGET;
         }
       }
@@ -72,7 +69,7 @@ public class MyAutoDrive {
         autoDrive.vumark.scan(telemetry);
         VectorF trans = autoDrive.vumark.getVumarkTrans();
         Orientation orientation = autoDrive.vumark.getVumarkOrient();
-        double zError = -449 - trans.get(2);
+        double zError = -460 - trans.get(2);
         double xError = trans.get(0) - 160;
         double yRotError = 0 - orientation.secondAngle;
 
@@ -83,7 +80,7 @@ public class MyAutoDrive {
           double strafePower = 0.0;
           double rotPower = 0.0;
           if (Math.abs(xError) >= 5) {
-            drivePower = xError / 100.0;
+            drivePower = xError / 150.0;
           }
           if (Math.abs(zError) >= 5) {
             strafePower = zError / 100.0;
@@ -97,6 +94,7 @@ public class MyAutoDrive {
           return GOTO_JEWEL_TARGET;
         } else {
           autoDrive.gyro.resetZaxis();
+          autoDrive.gyro.setZaxisOffset((int)Math.round(yRotError));
           autoDrive.jewelKnockOutState = JewelKnockOutState.START;
           return KNOCK_OUT_JEWEL;
         }
@@ -179,8 +177,13 @@ public class MyAutoDrive {
       public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
         //double curTime = autoDrive.runtime.milliseconds();
         int rotError = autoDrive.gyro.getZaxis(telemetry);
+        if (autoDrive.jewelColor == autoDrive.allianceColor) {
+          rotError = -10 - rotError;
+        } else {
+          rotError = 10 - rotError;
+        }
         //if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
-        if (Math.abs(rotError) < 10) {
+        if (Math.abs(rotError) > 1) {
           return WAIT_ROTATE_FORWARD;
         } else {
           autoDrive.wheels.stop();
@@ -283,6 +286,9 @@ public class MyAutoDrive {
       stop();
     } else {
       autoState = autoState.update(this, telemetry);
+    }
+    if (autoState == AutoState.IDLE) {
+      gyro.getZaxis(telemetry);
     }
     telemetry.addData("AutoStatus", "runtime: %s F %s A %s states auto %s jewel %s",
       runtime.toString(), fieldMode, allianceColor, autoState, jewelKnockOutState);
