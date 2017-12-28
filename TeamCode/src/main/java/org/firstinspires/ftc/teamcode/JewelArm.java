@@ -8,7 +8,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class JewelArm {
 
   private Servo jewelServo = null;
-  private final double UP_SERVO = 0.95;
+  private final double UP_SERVO = 0.90;
   private final double DOWN_SERVO = 0.15;
 
   public void init(HardwareMap hardwaremap) {
