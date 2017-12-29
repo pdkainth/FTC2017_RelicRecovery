@@ -48,6 +48,7 @@ public class MyAutoDrive {
         RelicRecoveryVuMark curVumark = autoDrive.vumark.getCurVumark();
         OpenGLMatrix curPose = autoDrive.vumark.getCurPose();
         if ((curVumark == RelicRecoveryVuMark.UNKNOWN) || (curPose == null)) {
+          autoDrive.wheels.setScaling(true);
           autoDrive.wheels.drive(0.5, 0, 0, telemetry, autoDrive.distanceRange, true);
           autoDrive.wheels.stop();
           return GET_VUMARK;
@@ -80,7 +81,7 @@ public class MyAutoDrive {
           double strafePower = 0.0;
           double rotPower = 0.0;
           if (Math.abs(xError) >= 5) {
-            drivePower = xError / 150.0;
+            drivePower = xError / 200.0;
           }
           if (Math.abs(zError) >= 5) {
             strafePower = zError / 100.0;
@@ -106,11 +107,150 @@ public class MyAutoDrive {
         if (autoDrive.jewelKnockOutState != JewelKnockOutState.IDLE) {
           return KNOCK_OUT_JEWEL;
         } else {
-          return IDLE;
+          return GET_VUMARK_OFF_BALANCE_BOARD;
+        }
+      }
+    },
+    GET_VUMARK_OFF_BALANCE_BOARD {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.vumark.scan(telemetry);
+        RelicRecoveryVuMark curVumark = autoDrive.vumark.getCurVumark();
+        OpenGLMatrix curPose = autoDrive.vumark.getCurPose();
+        if ((curVumark == RelicRecoveryVuMark.UNKNOWN) || (curPose == null)) {
+          int rotError = autoDrive.gyro.getZaxis(telemetry);
+          double rotPower = Range.scale((double)rotError, -180.0, 179.0, -1.0, 1.0);
+          rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 1) * Math.signum(rotPower);
+          autoDrive.wheels.drive(0.5, 0, rotPower, telemetry, autoDrive.distanceRange, true);
+          autoDrive.wheels.stop();
+          return GET_VUMARK_OFF_BALANCE_BOARD;
+        }
+        else {
+          VectorF trans = autoDrive.vumark.getVumarkTrans();
+          autoDrive.bbOffEncoderCnt = (int)(((23.5 - autoDrive.vumark.getVdistance()) * 1440) / (4 * Math.PI));
+          autoDrive.wheels.resetEncoder();
+          return GET_OFF_BALANCE_BOARD;
+        }
+      }
+    },
+    GET_OFF_BALANCE_BOARD {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        int curEncCount = autoDrive.wheels.getEncoder();
+        if (curEncCount < autoDrive.bbOffEncoderCnt) {
+          double drivePower = autoDrive.bbOffEncoderCnt - curEncCount;
+          drivePower = Range.scale((double)drivePower, 0, autoDrive.bbOffEncoderCnt, 0.2, 0.5);
+
+          int rotError = autoDrive.gyro.getZaxis(telemetry);
+          double rotPower = Range.scale((double)rotError, -180.0, 179.0, -1.0, 1.0);
+          rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 1) * Math.signum(rotPower);
+
+          autoDrive.wheels.setScaling(false);
+          autoDrive.wheels.drive(drivePower, 0, rotPower, telemetry, autoDrive.distanceRange, true);
+
+          telemetry.addData("AutoDebug1", "curEnCnt %d bbOffEncoderCnt %d", curEncCount, autoDrive.bbOffEncoderCnt);
+
+          return GET_OFF_BALANCE_BOARD;
+        } else {
+          autoDrive.wheels.stop();
+          return GET_VUMARK_FOR_GLYPH_DRIVE;
         }
       }
     },
     GET_VUMARK_FOR_GLYPH_DRIVE {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.vumark.scan(telemetry);
+        RelicRecoveryVuMark curVumark = autoDrive.vumark.getCurVumark();
+        OpenGLMatrix curPose = autoDrive.vumark.getCurPose();
+        if ((curVumark == RelicRecoveryVuMark.UNKNOWN) || (curPose == null)) {
+          autoDrive.wheels.setScaling(false);
+          autoDrive.wheels.drive(0, 0, 0.5, telemetry, autoDrive.distanceRange, true);
+          autoDrive.wheels.stop();
+          return GET_VUMARK_FOR_GLYPH_DRIVE;
+        }
+        else {
+          VectorF trans = autoDrive.vumark.getVumarkTrans();
+          Orientation orientation = autoDrive.vumark.getVumarkOrient();
+          double expectedOrient = autoDrive.vumark.getRotation();
+          double orientError = expectedOrient - orientation.secondAngle;
+          if (Math.abs(orientError) > 5) {
+            double rotPower = Range.scale((double)orientError, -60.0, 60.0, -1.0, 1.0);
+            rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 0.5) * Math.signum(rotPower);
+            autoDrive.wheels.drive(0, 0, rotPower, telemetry, autoDrive.distanceRange, true);
+            return GET_VUMARK_FOR_GLYPH_DRIVE;
+          } else {
+            autoDrive.wheels.stop();
+            return GOTO_GLYPH_TARGET;
+          }
+        }
+      }
+    },
+    GOTO_GLYPH_TARGET {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        autoDrive.vumark.scan(telemetry);
+        RelicRecoveryVuMark curVumark = autoDrive.vumark.getCurVumark();
+        OpenGLMatrix curPose = autoDrive.vumark.getCurPose();
+        if ((curVumark == RelicRecoveryVuMark.UNKNOWN) || (curPose == null)) {
+          return IDLE;
+        } else {
+          Orientation orientation = autoDrive.vumark.getVumarkOrient();
+
+          double targetHdelta = autoDrive.glyphTargetH - autoDrive.vumark.getHdistance();
+          double targetVdelta = autoDrive.glyphTargetV - autoDrive.vumark.getVdistance();
+          double distanceToTarget = Math.sqrt((targetHdelta * targetHdelta) + (targetVdelta * targetVdelta));
+
+          if (distanceToTarget > 0.5) {
+            double angleToTarget = Math.toDegrees(Math.atan(targetVdelta / targetHdelta));
+            double targetDeltaAngle = Math.abs(Math.abs(angleToTarget) - orientation.secondAngle);
+
+            double drivePower = distanceToTarget * Math.sin(Math.toRadians(targetDeltaAngle)) * Math.signum(targetVdelta);
+            double strafePower = -distanceToTarget * Math.cos(Math.toRadians(targetDeltaAngle)) * Math.signum(targetHdelta);
+            double scaleMax = Math.sqrt(
+              (autoDrive.glyphTargetH * autoDrive.glyphTargetH) +
+              (autoDrive.glyphTargetV * autoDrive.glyphTargetV));
+            drivePower = Range.scale(Math.abs(drivePower), 0, scaleMax, 0.15, 0.4) * Math.signum(drivePower);
+            strafePower = Range.scale(Math.abs(strafePower), 0, scaleMax, 0.15, 0.4) * Math.signum(strafePower);
+
+            double expectedOrient = autoDrive.vumark.getRotation();
+            double orientError = expectedOrient - orientation.secondAngle;
+            double rotPower = Range.scale((double)orientError, -120.0, 120.0, -1.0, 1.0);
+            rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.15, 0.4) * Math.signum(rotPower);
+
+            telemetry.addData("AutoDebug2", "delta H %.2f V %.2f o %.2f r %.2f",
+              targetHdelta, targetVdelta, orientError, targetDeltaAngle);
+            telemetry.addData("AutoDebug3", "drive %.2f strafe %.2f rot %.2f",
+              drivePower, strafePower, rotPower);
+            autoDrive.wheels.setScaling(false);
+            autoDrive.wheels.drive(drivePower, strafePower, rotPower, telemetry, autoDrive.distanceRange, true);
+            return GOTO_GLYPH_TARGET;
+          } else {
+            autoDrive.wheels.stop();
+            return GLYPH_FINAL_ORIENTATION;
+          }
+        }
+      }
+    },
+    GLYPH_FINAL_ORIENTATION {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        int rotError = (int)(autoDrive.glyphTargetOrientation - (-autoDrive.gyro.getZaxis(telemetry)));
+        double rotPower = 0.0;
+        //if ((curTime - autoDrive.jewelRotStartTime) < 1000) {
+        if (Math.abs(rotError) > 1) {
+          rotPower = Range.scale((double) rotError, -180.0, 179.0, -1.0, 1.0);
+          rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 1) * Math.signum(rotPower);
+          autoDrive.wheels.setScaling(false);
+          autoDrive.wheels.drive(0, 0, rotPower, telemetry, autoDrive.distanceRange, true);
+          return GLYPH_FINAL_ORIENTATION;
+        } else {
+          autoDrive.wheels.stop();
+          return IDLE;
+        }
+      }
+    },
+    GLYPH_FINAL_APPROACH {
+      public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
+        return IDLE;
+      }
+    },
+    DROP_GLYPH {
       public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
         return IDLE;
       }
@@ -240,6 +380,12 @@ public class MyAutoDrive {
   private AllianceColor jewelColor;
   double jewelRotStartTime;
 
+  int bbOffEncoderCnt;
+
+  double glyphTargetH;
+  double glyphTargetV;
+  double glyphTargetOrientation;
+
   public void init(HardwareMap hardwareMap, Telemetry telemetry, FieldMode fieldMode,
                    AllianceColor allianceColor) {
     telemetry.addData("AutoStatus", "Initializing");
@@ -260,6 +406,12 @@ public class MyAutoDrive {
     jewelKnockOutState = JewelKnockOutState.IDLE;
     jewelColor = AllianceColor.UNKNOWN;
     jewelRotStartTime = 0.0;
+
+    bbOffEncoderCnt = 0;
+
+    glyphTargetH = 28.4 - 6;
+    glyphTargetV =39.5 - 20;
+    glyphTargetOrientation = 0.0;
 
     telemetry.addData("AutoStatus", "Initialized F %s A %s",
       this.fieldMode, this.allianceColor);
@@ -289,6 +441,7 @@ public class MyAutoDrive {
     }
     if (autoState == AutoState.IDLE) {
       gyro.getZaxis(telemetry);
+      vumark.scan(telemetry);
     }
     telemetry.addData("AutoStatus", "runtime: %s F %s A %s states auto %s jewel %s",
       runtime.toString(), fieldMode, allianceColor, autoState, jewelKnockOutState);
