@@ -35,6 +35,8 @@ public class VuMark_Nav {
   private OpenGLMatrix pose;
   private VectorF translation;
   private Orientation orientation;
+  private double hDistanceInch;
+  private double vDistanceInch;
 
   public void init(HardwareMap hardwareMap) {
     cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -76,8 +78,18 @@ public class VuMark_Nav {
         double rY = orientation.secondAngle;
         double rZ = orientation.thirdAngle;
 
-        telemetry.addData("VuMark", "%s trans %.2f %.2f %.2f rot %.2f %.2f %.2f", vuMark,
-                          tX, tY, tZ, rX, rY, rZ);
+        hDistanceInch =
+          (Math.abs(tZ) * Math.cos(Math.toRadians(orientation.secondAngle))) +
+            (tX * Math.sin(Math.toRadians(orientation.secondAngle)));
+        hDistanceInch /= 24.5;
+
+        vDistanceInch =
+          (Math.abs(tZ) * Math.sin(Math.toRadians(orientation.secondAngle))) -
+            (tX * Math.cos(Math.toRadians(orientation.secondAngle)));
+        vDistanceInch /= 24.5;
+
+        telemetry.addData("VuMark", "trans %.2f %.2f %.2f rot %.2f %.2f %.2f H %.2f V %.2f",
+                          tX/24.5, tY/24.5, tZ/24.5, rX, rY, rZ, hDistanceInch, vDistanceInch);
       }
       else {
         telemetry.addData("VuMark", "%s", vuMark);
@@ -98,4 +110,13 @@ public class VuMark_Nav {
   public OpenGLMatrix getCurPose() { return pose; }
   public VectorF getVumarkTrans() { return translation; }
   public Orientation getVumarkOrient() { return orientation; }
+  public double getVdistance() { return vDistanceInch; }
+  public double getHdistance() { return hDistanceInch; }
+  public double getRotation() {
+    double rotation = Math.toDegrees(Math.atan(vDistanceInch/hDistanceInch));
+    if (rotation >= 180.0) {
+      rotation -= 360.0;
+    }
+    return rotation;
+  }
 }
