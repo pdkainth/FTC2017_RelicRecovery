@@ -34,11 +34,21 @@ public class Mecanum {
     backLeftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
     backRightDrive.setDirection(DcMotorSimple.Direction.FORWARD);
 
+    resetEncoder();
     scalingOn = true;
   }
 
   public void setScaling(boolean flag) {
     scalingOn = flag;
+  }
+
+  public void resetEncoder() {
+    backRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    backRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+  }
+
+  public int getEncoder() {
+    return backRightDrive.getCurrentPosition();
   }
 
   public void drive(double drive, double strafe, double rotate, Telemetry telemetry,
@@ -95,8 +105,10 @@ public class Mecanum {
     backLeftDrive.setPower(backLeftPower);
     backRightDrive.setPower(backRightPower);
 
-    telemetry.addData("mecanum", "power FL %.2f FR %.2f BL %.2f BR %.2f",
-      frontLeftPower, frontRightPower, backLeftPower, backRightPower);
+    int encPosition = backRightDrive.getCurrentPosition();
+
+    telemetry.addData("mecanum", "power FL %.2f FR %.2f BL %.2f BR %.2f pos %d",
+      frontLeftPower, frontRightPower, backLeftPower, backRightPower, encPosition);
   }
 
   public void stop() {
