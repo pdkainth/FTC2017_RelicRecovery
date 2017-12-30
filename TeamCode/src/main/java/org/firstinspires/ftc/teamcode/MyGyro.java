@@ -60,8 +60,8 @@ public class MyGyro {
   }
 
   public int getZaxis(Telemetry telemetry) {
-    int integratedZ = mrGyro.getIntegratedZValue();
-    integratedZ -= offsetZaxis;
+    int integratedZreading = mrGyro.getIntegratedZValue();
+    int integratedZ = integratedZreading - offsetZaxis;
     int integratedZMod360 = integratedZ % 360;
     int integratedZMod180 = integratedZMod360;
     if (integratedZMod180 >= 180) {
@@ -71,7 +71,8 @@ public class MyGyro {
       integratedZMod180 += 360;
     }
 
-    telemetry.addData("gyro", "zAxis, int %d mod360 %d mod180 %d ", integratedZ, integratedZMod360, integratedZMod180);
+    telemetry.addData("gyro", "zAxis, int %d mod360 %d mod180 %d offset %d",
+      integratedZ, integratedZMod360, integratedZMod180, offsetZaxis);
     return integratedZMod180;
   }
 }

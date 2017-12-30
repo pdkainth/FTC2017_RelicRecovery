@@ -49,6 +49,19 @@ public class VuMark_Nav {
     relicTemplate.setName("relicVuMarkTemplate"); // can help in debugging; otherwise not necessary
   }
 
+  public static final int getVumarkIdx(RelicRecoveryVuMark thisVumark) {
+    int value = 0;
+    if (thisVumark == RelicRecoveryVuMark.LEFT) {
+      value = 0;
+    } else if (thisVumark == RelicRecoveryVuMark.CENTER) {
+      value = 1;
+    } else if (thisVumark == RelicRecoveryVuMark.RIGHT) {
+      value = 2;
+    }
+
+    return value;
+  }
+
   public void start() {
     relicTrackables.activate();
   }
@@ -88,8 +101,8 @@ public class VuMark_Nav {
             (tX * Math.cos(Math.toRadians(orientation.secondAngle)));
         vDistanceInch /= 24.5;
 
-        telemetry.addData("VuMark", "trans %.2f %.2f %.2f rot %.2f %.2f %.2f H %.2f V %.2f",
-                          tX/24.5, tY/24.5, tZ/24.5, rX, rY, rZ, hDistanceInch, vDistanceInch);
+        telemetry.addData("VuMark", "%s trans %.2f %.2f %.2f rot %.2f %.2f %.2f H %.2f V %.2f",
+          vuMark, tX/24.5, tY/24.5, tZ/24.5, rX, rY, rZ, hDistanceInch, vDistanceInch);
       }
       else {
         telemetry.addData("VuMark", "%s", vuMark);
