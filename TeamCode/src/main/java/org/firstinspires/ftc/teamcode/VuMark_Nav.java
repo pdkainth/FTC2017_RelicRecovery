@@ -43,6 +43,7 @@ public class VuMark_Nav {
     parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
     parameters.vuforiaLicenseKey = "AWjQG/f/////AAAAGaR1lGJIDkdysS4tDu7sXQYDMWeiLDd9SoUJThu+KZdTtUifS+QbDu1xvPaSQTLtSRQuFNS82vbCdNnJZ9menqK5EWoKuH3N5BRZP14ZkIX71FS7Y1al/IzK+TEpILyoz3xoi2vPoiO1eHJpApOglq7sFPzQjrOu/12lHMI62JwzqRxuM55x++q0jgw/B3nP4duClSl4GenRihJpLA1ons/GHwtGHl3/M0cGgmQS/yYq6r/gpaNp4KCM9AdmyJ0Lstn85xnTek3EmxiLBWQ0WM16CB1zpXdo1oNlz/o8/9pZMTpTuz8zAjDkmL5W7xlGY/mT3bmaajDDWR/VZQOaRC7hL2Ic+UK4Hl97H2KCrLaW";
     parameters.cameraDirection = VuforiaLocalizer.CameraDirection.FRONT;
+    parameters.useExtendedTracking = false;
     this.vuforia = ClassFactory.createVuforiaLocalizer(parameters);
     relicTrackables = this.vuforia.loadTrackablesFromAsset("RelicVuMark");
     relicTemplate = relicTrackables.get(0);
