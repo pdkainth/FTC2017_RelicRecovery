@@ -14,9 +14,11 @@ public class Mecanum {
   private DcMotor frontRightDrive = null;
   private DcMotor backLeftDrive = null;
   private DcMotor backRightDrive = null;
+  boolean scalingOn = true;
+
   private final static double MAX_HAZARD_DISTANCE = 60.0;
   private final static double MIN_HAZARD_DISTANCE = 35.0;
-  boolean scalingOn = true;
+  private static final int ENC_TICK_PER_REV = 1460;
 
   public void init(HardwareMap hardwareMap) {
     frontLeftDrive = hardwareMap.get(DcMotor.class, "Motor4");
@@ -49,6 +51,15 @@ public class Mecanum {
 
   public int getEncoder() {
     return backRightDrive.getCurrentPosition();
+  }
+
+  public int inchToEncCnt(double inch, boolean encReset) {
+    int bbOffEncoderCnt;
+    bbOffEncoderCnt = (int)((inch * ENC_TICK_PER_REV) / (4 * Math.PI));
+    if (encReset == true) {
+      resetEncoder();
+    }
+    return bbOffEncoderCnt;
   }
 
   public void drive(double drive, double strafe, double rotate, Telemetry telemetry,
