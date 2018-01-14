@@ -18,8 +18,9 @@ public class MyTeleOp extends OpMode {
   private Mecanum wheels = new Mecanum();
   private LeverArm arm1 = new LeverArm();
   private GrabberArm arm2 = new GrabberArm();
-  private MyRangeSensor distanceRange = new MyRangeSensor();
+  private MyRangeSensor distanceRange = null;
   private JewelArm jewelArm = new JewelArm();
+  private MyColorSensor colorSensor = new MyColorSensor();
 
   @Override
   public void init() {
@@ -28,8 +29,10 @@ public class MyTeleOp extends OpMode {
     wheels.init(hardwareMap);
     arm1.init(hardwareMap);
     arm2.init(hardwareMap);
-    distanceRange.init(hardwareMap);
+    //distanceRange.init(hardwareMap);
     jewelArm.init(hardwareMap);
+    colorSensor.init(hardwareMap, "ColorSensor1");
+    colorSensor.stop();
 
     telemetry.addData("Status", "Initialized");
   }
@@ -50,7 +53,7 @@ public class MyTeleOp extends OpMode {
     updateDrive();
     updateArm1(); // lever ARM
     updateArm2(); // Grabber Arm
-    updatedistanceRange();
+    //updatedistanceRange();
 
     telemetry.addData("Status", "Run Time: " + runtime.toString());
   }
@@ -61,6 +64,7 @@ public class MyTeleOp extends OpMode {
     arm1.stop();
     arm2.stop();
     jewelArm.stop();
+    colorSensor.stop();
   }
 
   private void updateDrive() {
@@ -75,18 +79,19 @@ public class MyTeleOp extends OpMode {
 
     double rotate = gamepad1.right_stick_x;
 
-    boolean override = (gamepad1.left_trigger > 0.7);
+    //boolean override = (gamepad1.left_trigger > 0.7);
+    boolean override = true;
     wheels.drive(drive, strafe, rotate, telemetry, distanceRange, override);
     telemetry.addData("gamepad1 wheels", "D(%.2f) S(%.2f) R(%.2f)", drive, strafe, rotate);
   }
 
   private void updateArm1() {
-    int position;
-    boolean position0 = gamepad1.right_bumper;
-    boolean position1 = gamepad1.y;
-    boolean position2 = gamepad1.b;
-    boolean position3 = gamepad1.a;
-    boolean position4 = gamepad1.x;
+    int position = -1;
+    //boolean position0 = gamepad1.right_bumper;
+    //boolean position1 = gamepad1.y;
+    //boolean position2 = gamepad1.b;
+    //boolean position3 = gamepad1.a;
+    //boolean position4 = gamepad1.x;
 
     double raise = 0.0;
     if (gamepad1.dpad_up) {
@@ -96,6 +101,7 @@ public class MyTeleOp extends OpMode {
       raise = -1.0;
     }
     boolean override = (gamepad1.right_trigger > 0.7);
+    //boolean override = true;
 
     if (gamepad1.start) {
       arm1.resetEncoder();
@@ -106,19 +112,17 @@ public class MyTeleOp extends OpMode {
         arm1.stop();
       }
 
-      if (position0 == true) {
-        position = 0;
-      } else if (position1 == true) {
-        position = 1;
-      } else if (position2 == true) {
-        position = 2;
-      } else if (position3 == true) {
-        position = 3;
-      } else if (position4 == true) {
-        position = 4;
-      } else {
-        position = -1;
-      }
+      //if (position0 == true) {
+      //  position = 0;
+      //} else if (position1 == true) {
+      //  position = 1;
+      //} else if (position2 == true) {
+      //  position = 2;
+      //} else if (position3 == true) {
+      //  position = 3;
+      //} else if (position4 == true) {
+      //  position = 4;
+      //}
       arm1.setPosition(position, telemetry);
     }
   }
