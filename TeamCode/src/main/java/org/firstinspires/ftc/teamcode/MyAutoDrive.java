@@ -16,14 +16,12 @@ public class MyAutoDrive {
   public enum FieldMode {STRAIGHT, SQUARE}
   public enum AllianceColor {UNKNOWN, RED, BLUE}
 
-  private static final int ENC_TICK_PER_REV = 1460;
-
   private boolean running = false;
 
   private Mecanum wheels = new Mecanum();
   private LeverArm arm1 = new LeverArm();
   private GrabberArm arm2 = new GrabberArm();
-  private MyRangeSensor distanceRange = new MyRangeSensor();
+  private MyRangeSensor distanceRange = null;
   private VuMark_Nav vumark = new VuMark_Nav();
   private JewelArm jewelArm = new JewelArm();
   private MyColorSensor colorSensor = new MyColorSensor();
@@ -138,8 +136,7 @@ public class MyAutoDrive {
             return WAIT_TIME_VUMARK_STABLE;
           } else {
             // for Red field, get off the balance board to acquire VU mark again for more accurate drive to Glyph
-            autoDrive.bbOffEncoderCnt = (int)(((23.5 - autoDrive.vumark.getVdistance()) * ENC_TICK_PER_REV) / (4 * Math.PI));
-            autoDrive.wheels.resetEncoder();
+            autoDrive.bbOffEncoderCnt = autoDrive.wheels.inchToEncCnt(23.5 - autoDrive.vumark.getVdistance(), true);
             return GET_OFF_BALANCE_BOARD;
           }
         }
@@ -245,8 +242,8 @@ public class MyAutoDrive {
       public AutoState update(MyAutoDrive autoDrive, Telemetry telemetry) {
         // drop the glyph
         autoDrive.arm2.open();
-        autoDrive.bbOffEncoderCnt = (int)((2.0 * ENC_TICK_PER_REV) / (4 * Math.PI));
-        autoDrive.wheels.resetEncoder();
+
+        autoDrive.bbOffEncoderCnt = autoDrive.wheels.inchToEncCnt(4.0, true);
         return MOVE_BACK;
       }
     },
@@ -269,8 +266,7 @@ public class MyAutoDrive {
         if ((autoDrive.runtime.milliseconds() - autoDrive.startTime) < 1000) {
           return WAIT_ARM_DOWN;
         } else {
-          autoDrive.bbOffEncoderCnt = (int)((4.0 * ENC_TICK_PER_REV) / (4 * Math.PI));
-          autoDrive.wheels.resetEncoder();
+          autoDrive.bbOffEncoderCnt = autoDrive.wheels.inchToEncCnt(6.0, true);
           autoDrive.leverArmPosition = -1;
           return PUSH_GLYPH;
         }
@@ -347,9 +343,9 @@ public class MyAutoDrive {
       public JewelKnockOutState update(MyAutoDrive autoDrive, Telemetry telemetry) {
         int rotError = autoDrive.gyro.getZaxis(telemetry);
         if (autoDrive.jewelColor == autoDrive.allianceColor) {
-          rotError = -10 - rotError;
+          rotError = -15 - rotError;
         } else {
-          rotError = 10 - rotError;
+          rotError = 15 - rotError;
         }
         if (Math.abs(rotError) > 1) {
           return WAIT_ROTATE_FORWARD;
@@ -450,8 +446,7 @@ public class MyAutoDrive {
         if (autoDrive.glyphDrive_Orient(-180, telemetry) == false) {
           return SPECIAL_BLUE_SQ_ORIENT;
         } else {
-          autoDrive.bbOffEncoderCnt = (int)((4.0 * ENC_TICK_PER_REV) / (4 * Math.PI));
-          autoDrive.wheels.resetEncoder();
+          autoDrive.bbOffEncoderCnt = autoDrive.wheels.inchToEncCnt(4.0, true);
           return SPECIAL_BLUE_SQ_DRIVE;
         }
       }
@@ -524,7 +519,7 @@ public class MyAutoDrive {
     wheels.init(hardwareMap);
     arm1.init(hardwareMap);
     arm2.init(hardwareMap);
-    distanceRange.init(hardwareMap);
+    //distanceRange.init(hardwareMap);
     jewelArm.init(hardwareMap);
     colorSensor.init(hardwareMap, "ColorSensor1");
     gyro.init(hardwareMap);
@@ -546,7 +541,7 @@ public class MyAutoDrive {
       glyphDriveData.driveDirV = 1.0;
       glyphDriveData.driveOrder[0] = GlyphDriveDir.HOR;
       glyphDriveData.driveOrder[1] = GlyphDriveDir.VERT;
-      glyphDriveData.targetOffsetH[2] = 0.75;
+      glyphDriveData.targetOffsetH[2] = 0.25;
       glyphDriveData.targetOffsetH[1] = glyphDriveData.targetOffsetH[2] + 7.6;
       glyphDriveData.targetOffsetH[0] = glyphDriveData.targetOffsetH[1] + 7.6;
       glyphDriveData.targetOffsetV[0] = glyphDriveData.targetOffsetV[1] = glyphDriveData.targetOffsetV[2] = -12;
@@ -573,7 +568,7 @@ public class MyAutoDrive {
       glyphDriveData.driveDirV = 1.0;
       glyphDriveData.driveOrder[0] = GlyphDriveDir.VERT;
       glyphDriveData.driveOrder[1] = GlyphDriveDir.HOR;
-      glyphDriveData.targetOffsetH[0] = 11.5;
+      glyphDriveData.targetOffsetH[0] = 8.5;
       glyphDriveData.targetOffsetH[1] = glyphDriveData.targetOffsetH[0] + 7.6;
       glyphDriveData.targetOffsetH[2] = glyphDriveData.targetOffsetH[1] + 7.6;
       glyphDriveData.targetOffsetV[0] = glyphDriveData.targetOffsetV[1] = glyphDriveData.targetOffsetV[2] = 20;
@@ -602,7 +597,7 @@ public class MyAutoDrive {
     updateDrive(telemetry, gamepad1);
     updateArm1(telemetry, gamepad1);
     updateArm2(telemetry, gamepad1);
-    updatedistanceRange(telemetry);
+    //updatedistanceRange(telemetry);
   }
 
   public void start(Telemetry telemetry) {
@@ -621,7 +616,7 @@ public class MyAutoDrive {
       autoState = autoState.update(this, telemetry);
     }
     if (autoState == AutoState.IDLE) {
-      updatedistanceRange(telemetry);
+      //  updatedistanceRange(telemetry);
       gyro.getZaxis(telemetry);
       vumark.scan(telemetry);
     }
@@ -713,7 +708,7 @@ public class MyAutoDrive {
       } else {
         targetDelta = glyphDriveData.targetDeltaV;
       }
-      bbOffEncoderCnt = (int)((targetDelta * ENC_TICK_PER_REV) / (4 * Math.PI));
+      bbOffEncoderCnt = wheels.inchToEncCnt(targetDelta, true);
       return true;
     }
   }
@@ -728,7 +723,7 @@ public class MyAutoDrive {
     double rotPower = 0.0;
     if (Math.abs(rotError) > 1) {
       rotPower = Range.scale((double)rotError, -180.0, 180.0, -1.0, 1.0);
-      rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 0.6) * Math.signum(rotPower);
+      rotPower = Range.scale(Math.abs(rotPower), 0, 1, 0.2, 0.7) * Math.signum(rotPower);
       wheels.setScaling(false);
       wheels.drive(0, 0, rotPower, telemetry, distanceRange, true);
       return false;
@@ -790,7 +785,7 @@ public class MyAutoDrive {
     //if (curEncCount < bbOffEncoderCnt) {
       double drivePowerRange = Math.max(bbOffEncoderCnt, 1500);
       double drivePower = Range.scale((double) encoderDelta, -drivePowerRange, drivePowerRange, -1.0, 1.0) * driveDir;
-      drivePower = Range.scale(Math.abs(drivePower), 0, 1.0, 0.15, 0.3) * Math.signum(drivePower);
+      drivePower = Range.scale(Math.abs(drivePower), 0, 1.0, 0.2, 0.4) * Math.signum(drivePower);
 
       double rotPower = 0.0;
       int rotError = orientation - (-gyro.getZaxis(telemetry));
