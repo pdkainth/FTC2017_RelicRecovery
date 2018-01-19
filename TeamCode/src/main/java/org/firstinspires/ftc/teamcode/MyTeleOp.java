@@ -34,6 +34,8 @@ public class MyTeleOp extends OpMode {
     colorSensor.init(hardwareMap, "ColorSensor1");
     colorSensor.stop();
 
+    wheels.setMotorPowerScale(0.5);
+
     telemetry.addData("Status", "Initialized");
   }
 
@@ -87,17 +89,17 @@ public class MyTeleOp extends OpMode {
 
   private void updateArm1() {
     int position = -1;
-    //boolean position0 = gamepad1.right_bumper;
-    //boolean position1 = gamepad1.y;
-    //boolean position2 = gamepad1.b;
-    //boolean position3 = gamepad1.a;
-    //boolean position4 = gamepad1.x;
+    boolean position0 = gamepad2.right_bumper;
+    boolean position1 = gamepad2.y;
+    boolean position2 = gamepad2.b;
+    boolean position3 = gamepad2.a;
+    boolean position4 = gamepad2.x;
 
     double raise = 0.0;
-    if (gamepad1.dpad_up) {
+    if (gamepad1.dpad_up || gamepad2.dpad_up) {
       raise = 1.0;
     }
-    if (gamepad1.dpad_down) {
+    if (gamepad1.dpad_down || gamepad2.dpad_down) {
       raise = -1.0;
     }
     boolean override = (gamepad1.right_trigger > 0.7);
@@ -112,29 +114,24 @@ public class MyTeleOp extends OpMode {
         arm1.stop();
       }
 
-      //if (position0 == true) {
-      //  position = 0;
-      //} else if (position1 == true) {
-      //  position = 1;
-      //} else if (position2 == true) {
-      //  position = 2;
-      //} else if (position3 == true) {
-      //  position = 3;
-      //} else if (position4 == true) {
-      //  position = 4;
-      //}
+      if (position0 == true) {
+        position = 0;
+      } else if (position1 == true) {
+        position = 1;
+      } else if (position2 == true) {
+        position = 2;
+      } else if (position3 == true) {
+        position = 3;
+      } else if (position4 == true) {
+        position = 4;
+      }
       arm1.setPosition(position, telemetry);
     }
   }
 
-  private void testArm2() {
-    double positionLeft = gamepad2.left_stick_x;
-    double positionRight = gamepad2.right_stick_x;
-    arm2.update(positionLeft, positionRight, telemetry);
-  }
-
   private void updateArm2() {
     GrabberArm.ButtonState buttonCond;
+    boolean releaseBlock = false;
 
     if (gamepad1.left_bumper == true) {
       buttonCond = GrabberArm.ButtonState.PRESSED;
@@ -142,12 +139,15 @@ public class MyTeleOp extends OpMode {
       buttonCond = GrabberArm.ButtonState.RELEASED;
     }
 
-    arm2.update(buttonCond, telemetry);
+    if (gamepad1.right_bumper == true) {
+      releaseBlock = true;
+    }
+
+    arm2.update(buttonCond, releaseBlock, telemetry);
   }
 
   private void updatedistanceRange() {
     distanceRange.getDistance(telemetry);
   }
-
 
 }
