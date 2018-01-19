@@ -15,7 +15,7 @@ public class GrabberArm {
   private ButtonState currentButtonState = ButtonState.RELEASED;
 
   private enum GrabberState {
-    OPEN, CLOSED
+    OPEN, CLOSED, RELEASED
   }
 
   private GrabberState curGrabberState = GrabberState.OPEN;
@@ -23,6 +23,7 @@ public class GrabberArm {
   private Servo leftServo = null;
   private Servo rightServo = null;
   private final double OPEN_SERVO = 1.0;
+  private final double RELEASE_SERVO = 0.45;
   private final double CLOSE_SERVO = 0.35;
 
   public void init(HardwareMap hardwaremap) {
@@ -64,9 +65,25 @@ public class GrabberArm {
     telemetry.addData("GrabberArm", "State %s button %s ", curGrabberState, currentButtonState);
   }
 
+  public void update(ButtonState newState, boolean releaseBlock, Telemetry telemetry) {
+
+    if (releaseBlock) {
+      release();
+      curGrabberState = GrabberState.RELEASED;
+      telemetry.addData("GrabberArm", "State %s button %s ", curGrabberState, currentButtonState);
+    } else {
+      update(newState, telemetry);
+    }
+  }
+
   public void open() {
     leftServo.setPosition(OPEN_SERVO);
     rightServo.setPosition(OPEN_SERVO);
+  }
+
+  public void release() {
+    leftServo.setPosition(RELEASE_SERVO);
+    rightServo.setPosition(RELEASE_SERVO);
   }
 
   public void close() {
