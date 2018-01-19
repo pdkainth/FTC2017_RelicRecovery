@@ -16,6 +16,8 @@ public class Mecanum {
   private DcMotor backRightDrive = null;
   boolean scalingOn = true;
 
+  private double motorPowerScale = 0.3;
+
   private final static double MAX_HAZARD_DISTANCE = 60.0;
   private final static double MIN_HAZARD_DISTANCE = 35.0;
   private static final int ENC_TICK_PER_REV = 1460;
@@ -38,10 +40,15 @@ public class Mecanum {
 
     resetEncoder();
     scalingOn = true;
+    motorPowerScale = 0.3;
   }
 
   public void setScaling(boolean flag) {
     scalingOn = flag;
+  }
+
+  public void setMotorPowerScale(double scale) {
+    motorPowerScale = scale;
   }
 
   public void resetEncoder() {
@@ -78,7 +85,7 @@ public class Mecanum {
 
     if (scalingOn) {
       drive = drive * 0.6;
-      strafe = strafe * 0.5;
+      strafe = strafe * 0.7;
       rotate = rotate * 0.5;
     }
 
@@ -101,10 +108,10 @@ public class Mecanum {
     }
 
     // scale down the power to avoid sudden movement
-    frontLeftPower *= 0.3;
-    backLeftPower *= 0.3;
-    frontRightPower *= 0.3;
-    backRightPower *= 0.3;
+    frontLeftPower *= motorPowerScale;
+    backLeftPower *= motorPowerScale;
+    frontRightPower *= motorPowerScale;
+    backRightPower *= motorPowerScale;
 
     //frontLeftPower  = Range.clip(frontLeftPower, -1.0, 1.0);
     //backLeftPower   = Range.clip(backLeftPower, -1.0, 1.0);
